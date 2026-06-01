@@ -1,7 +1,7 @@
 {
   inputs = {
-    # https://hydra.nixos-cuda.org/jobset/nixos-cuda/cuda-packages-stable
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    # https://hydra.nixos-cuda.org/project/nixos-cuda
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     devshell = {
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
