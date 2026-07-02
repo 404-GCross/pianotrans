@@ -33,6 +33,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+          cache-dependency-path: 'setup.py'
 
       - name: Install PyTorch ${{ inputs.pytorch_version || '2.7.1' }} + CUDA 12.8
         run: |
