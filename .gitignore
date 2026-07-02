@@ -1,0 +1,11 @@
+/test/cut_liszt.opus.mid
+__pycache__/
+*.pyc
+*.pyo
+/dist/
+/build/
+*.egg-info/
+.eggs/
+/windows/build/
+/windows/dist/
+/windows/pip.txt

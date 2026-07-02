@@ -1,0 +1,124 @@
+name: Test
+permissions: {}
+on:
+  pull_request:
+    paths-ignore:
+    - '**.md'
+    - 'screenshots/**'
+    - 'windows/**'
+  push:
+    branches-ignore:
+    - dependabot/**
+    paths-ignore:
+    - '**.md'
+    - 'screenshots/**'
+    - 'windows/**'
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: Enable debug
+        type: boolean
+        required: false
+        default: false
+      os:
+        description: OS to run
+        type: choice
+        options:
+          - linux
+          - darwin
+          - aarch64-linux
+          - x86_64-linux
+          - aarch64-darwin
+          - x86_64-darwin
+          - all
+        default: all
+      pianotrans:
+        description: Variant to run
+        type: choice
+        options:
+          - pianotrans
+          - pianotrans-amd-blis
+          - pianotrans-bin
+          - pianotrans-blis
+          - pianotrans-cuda
+          - pianotrans-mkl
+          - pianotrans-rocm
+          - all
+        default: all
+jobs:
+  transcribe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: >-
+          ${{ fromJSON(
+            inputs.os == 'linux' && '["ubuntu-latest", "ubuntu-24.04-arm"]' || (
+            inputs.os == 'darwin' && '["macos-latest", "macos-15-intel"]' || (
+            inputs.os == 'aarch64-linux' && '["ubuntu-24.04-arm"]' || (
+            inputs.os == 'x86_64-linux' && '["ubuntu-latest"]' || (
+            inputs.os == 'aarch64-darwin' && '["macos-latest"]' || (
+            inputs.os == 'x86_64-darwin' && '["macos-15-intel"]' || (
+            '["ubuntu-24.04-arm", "ubuntu-latest", "macos-latest", "macos-15-intel"]'
+          ))))))) }}
+        pianotrans: >-
+          ${{ fromJSON(
+            inputs.os == 'pianotrans' && '["pianotrans"]' || (
+            inputs.os == 'pianotrans-amd-blis' && '["pianotrans-amd-blis"]' || (
+            inputs.os == 'pianotrans-bin' && '["pianotrans-bin"]' || (
+            inputs.os == 'pianotrans-blis' && '["pianotrans-blis"]' || (
+            inputs.os == 'pianotrans-cuda' && '["pianotrans-cuda"]' || (
+            inputs.os == 'pianotrans-mkl' && '["pianotrans-mkl"]' || (
+            inputs.os == 'pianotrans-rocm' && '["pianotrans-rocm"]' || (
+            '["pianotrans", "pianotrans-amd-blis", "pianotrans-bin", "pianotrans-blis", "pianotrans-cuda", "pianotrans-mkl", "pianotrans-rocm"]'
+          )))))))) }}
+        exclude:
+        - {os: macos-15-intel, pianotrans: pianotrans-amd-blis}
+        - {os: macos-15-intel, pianotrans: pianotrans-blis}
+        - {os: macos-15-intel, pianotrans: pianotrans-bin}
+        - {os: macos-15-intel, pianotrans: pianotrans-cuda}
+        - {os: macos-15-intel, pianotrans: pianotrans-mkl}
+        - {os: macos-15-intel, pianotrans: pianotrans-rocm}
+        - {os: macos-latest, pianotrans: pianotrans-amd-blis}
+        - {os: macos-latest, pianotrans: pianotrans-blis}
+        - {os: macos-latest, pianotrans: pianotrans-cuda}
+        - {os: macos-latest, pianotrans: pianotrans-mkl}
+        - {os: macos-latest, pianotrans: pianotrans-rocm}
+        - {os: ubuntu-24.04-arm, pianotrans: pianotrans-amd-blis}
+        - {os: ubuntu-24.04-arm, pianotrans: pianotrans-bin} # nccl(cuda on arm?) takes > 1h to build
+        - {os: ubuntu-24.04-arm, pianotrans: pianotrans-blis}
+        - {os: ubuntu-24.04-arm, pianotrans: pianotrans-cuda}
+        - {os: ubuntu-24.04-arm, pianotrans: pianotrans-mkl}
+        - {os: ubuntu-24.04-arm, pianotrans: pianotrans-rocm}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: azuwis/actions/nix@main
+      with:
+        key: nix-${{ matrix.pianotrans }}
+        debug: ${{ inputs.debug }}
+    - uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+      with:
+        name: azuwis
+        authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        # pushFilter: (-source$|\.whl$)
+    - name: Build pianotrans
+      env:
+        PIANOTRANS: ${{ matrix.pianotrans }}
+      run: |
+        # build pianotrans, and create profile to prevent gc
+        echo "Build $PIANOTRANS"
+        nix -L build ".#$PIANOTRANS" --profile ~/.local/state/nix/profiles/pianotrans
+    - name: Test transcribe
+      run: |
+        ~/.local/state/nix/profiles/pianotrans/bin/pianotrans --cli test/cut_liszt.opus test/cut_liszt.opus test/cut_liszt.opus | tee /tmp/transcribe.log
+        time=$(awk 'BEGIN {ORS=" "} /Transcribe time:/ {print $3}' /tmp/transcribe.log)
+        file=test/cut_liszt.opus.mid
+        if [ "$RUNNER_OS" = macOS ]; then
+          size=$(stat -f %z "$file")
+        else
+          size=$(stat -c %s "$file")
+        fi
+        md5=$(md5sum "$file" | cut -d ' ' -f 1)
+        echo "::notice::Time/Size/MD5: $time / $size / $md5"
+        test -e "$file"
+    - uses: azuwis/actions/nix/post@main
