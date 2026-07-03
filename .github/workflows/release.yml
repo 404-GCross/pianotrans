@@ -1,15 +1,16 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (例如 1.1.1，会自动补 v 前缀)'
+        type: string
+        required: true
+        default: ''
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to release (leave empty to use latest)'
-        type: string
-        default: ''
 
 permissions:
   contents: write
@@ -24,10 +25,22 @@ jobs:
         shell: pwsh
 
     steps:
+      - name: Resolve version
+        id: version
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $ver = "${{ inputs.version }}"
+          } else {
+            $ver = "${{ github.ref_name }}" -replace '^v', ''
+          }
+          $tag = "v$ver"
+          Write-Host "Version: $ver"
+          Write-Host "Tag:     $tag"
+          echo "ver=$ver" >> $env:GITHUB_OUTPUT
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -103,14 +116,12 @@ jobs:
 
       - name: Package as 7z
         run: |
-          # Install 7-Zip via choco
           choco install 7zip -y --no-progress
           $7z = "C:\Program Files\7-Zip\7z.exe"
           if (-not (Test-Path $7z)) {
             $7z = (Get-Command 7z.exe -ErrorAction Stop).Source
           }
-          $tag = "${{ inputs.tag || github.ref_name }}"
-          $archive = "PianoTrans-$tag.7z"
+          $archive = "PianoTrans-v${{ steps.version.outputs.ver }}.7z"
           Write-Host "Creating $archive ..."
           Push-Location build\dist
           & $7z a -mx=9 "..\..\$archive" PianoTrans
@@ -123,8 +134,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
           draft: false
           prerelease: false
           generate_release_notes: true
