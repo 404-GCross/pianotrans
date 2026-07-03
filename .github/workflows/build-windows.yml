@@ -97,22 +97,45 @@ jobs:
           $pkgDir = "build\dist\PianoTrans"
           New-Item -ItemType Directory -Force "$pkgDir\reg"
           Copy-Item README.md "$pkgDir\README.txt"
+          Copy-Item README_CN.md "$pkgDir\README_CN.txt"
           Copy-Item windows\PianoTrans-CPU.bat $pkgDir\
           Copy-Item windows\RightClickMenuRegister.bat $pkgDir\
           Copy-Item windows\RightClickMenuUnregister.bat $pkgDir\
           Copy-Item windows\RightClickMenuRegister.reg.in "$pkgDir\reg\"
           Copy-Item windows\RightClickMenuUnregister.reg "$pkgDir\reg\"
 
+      - name: Remove unnecessary CUDA DLLs
+        run: |
+          $pkgDir = "build\dist\PianoTrans"
+          $patterns = @(
+            '*curand*',
+            '*cusolverMg*',
+            '*cusparse*',
+            '*nccl*',
+            '*nvJitLink*',
+            '*nvrtc-builtins*',
+            '*nvToolsExt*'
+          )
+          $removed = 0
+          foreach ($pattern in $patterns) {
+            $files = Get-ChildItem $pkgDir -Recurse -Filter $pattern -File -ErrorAction SilentlyContinue
+            foreach ($file in $files) {
+              $removed += $file.Length
+              Write-Host "Remove: $($file.Name) ($([math]::Round($file.Length / 1MB, 1)) MB)"
+              Remove-Item $file.FullName -Force
+            }
+          }
+          Write-Host "Freed: $([math]::Round($removed / 1MB, 1)) MB"
+
       - name: Verify package structure and size
         run: |
           Write-Host "=== Package contents ==="
-          Get-ChildItem build\dist\PianoTrans\ -Recurse -Depth 2 |
-            ForEach-Object { $_.FullName.Replace($pwd.Path + '\', '') }
-          Write-Host ""
+          Get-ChildItem build\dist\PianoTrans\ -Directory | ForEach-Object {
+            $size = (Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+            Write-Host "  $($_.Name): $([math]::Round($size / 1MB, 1)) MB"
+          }
           $totalSize = (Get-ChildItem build\dist\PianoTrans\ -Recurse -File | Measure-Object -Property Length -Sum).Sum
-          $totalSizeMB = [math]::Round($totalSize / 1MB, 1)
-          $totalSizeGB = [math]::Round($totalSize / 1GB, 2)
-          Write-Host "=== Total package size: $totalSizeMB MB ($totalSizeGB GB) ==="
+          Write-Host "=== Total: $([math]::Round($totalSize / 1MB, 1)) MB ($([math]::Round($totalSize / 1GB, 2)) GB) ==="
 
       - name: Upload artifact
         if: ${{ inputs.upload_artifact != false }}
