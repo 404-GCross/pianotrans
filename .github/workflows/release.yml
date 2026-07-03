@@ -1,21 +1,23 @@
-name: Build Windows Package
+name: Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
-      pytorch_version:
-        description: 'PyTorch version'
+      tag:
+        description: 'Tag to release (leave empty to use latest)'
         type: string
-        default: '2.7.1'
-      upload_artifact:
-        description: 'Upload build artifact'
-        type: boolean
-        default: true
+        default: ''
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     defaults:
       run:
@@ -24,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -32,9 +36,9 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'setup.py'
 
-      - name: Install PyTorch ${{ inputs.pytorch_version || '2.7.1' }} + CUDA 12.8
+      - name: Install PyTorch 2.7.1 + CUDA 12.8
         run: |
-          pip install torch==${{ inputs.pytorch_version || '2.7.1' }} `
+          pip install torch==2.7.1 `
             --index-url https://download.pytorch.org/whl/cu128
 
       - name: Install application dependencies
@@ -43,7 +47,7 @@ jobs:
 
       - name: Verify PyTorch installation
         run: |
-          python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"
+          python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA: {torch.version.cuda}')"
 
       - name: Prepare build directory
         run: |
@@ -56,68 +60,72 @@ jobs:
           Push-Location build
           pyinstaller --noconfirm PianoTrans.spec
           Pop-Location
-          Write-Host "PyInstaller output:"
-          Get-ChildItem build\dist\PianoTrans\ -Recurse | Select-Object -First 20
 
       - name: Download model checkpoint
         run: |
           $dest = "build\dist\PianoTrans\piano_transcription_inference_data"
           New-Item -ItemType Directory -Force $dest
           $url = "https://zenodo.org/record/4034264/files/CRNN_note_F1%3D0.9677_pedal_F1%3D0.9186.pth?download=1"
-          $out = "$dest\note_F1=0.9677_pedal_F1=0.9186.pth"
-          Write-Host "Downloading checkpoint..."
-          Invoke-WebRequest -Uri $url -OutFile $out
-          Write-Host "Checkpoint size: $((Get-Item $out).Length) bytes"
+          Invoke-WebRequest -Uri $url -OutFile "$dest\note_F1=0.9677_pedal_F1=0.9186.pth"
 
       - name: Download FFmpeg
         run: |
           $ffmpegDir = "build\dist\PianoTrans\ffmpeg"
           New-Item -ItemType Directory -Force $ffmpegDir
           $zipUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
-          $zipFile = "ffmpeg.zip"
-          Write-Host "Downloading FFmpeg..."
-          Invoke-WebRequest -Uri $zipUrl -OutFile $zipFile
-          Expand-Archive -Path $zipFile -DestinationPath ffmpeg_extract -Force
+          Invoke-WebRequest -Uri $zipUrl -OutFile ffmpeg.zip
+          Expand-Archive -Path ffmpeg.zip -DestinationPath ffmpeg_extract -Force
           $ffmpegExe = Get-ChildItem ffmpeg_extract -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
           if ($ffmpegExe) {
             Copy-Item $ffmpegExe.FullName $ffmpegDir\
-            Write-Host "FFmpeg copied: $($ffmpegExe.FullName)"
           } else {
-            Write-Warning "ffmpeg.exe not found in archive"
+            Write-Error "ffmpeg.exe not found in archive"
+            exit 1
           }
-          Remove-Item -Recurse -Force ffmpeg_extract, $zipFile -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force ffmpeg_extract, ffmpeg.zip -ErrorAction SilentlyContinue
 
       - name: Download context menu launcher
         run: |
-          $url = "https://github.com/zenden2k/context-menu-launcher/releases/download/1.0/singleinstance.exe"
-          Invoke-WebRequest -Uri $url -OutFile "build\dist\PianoTrans\singleinstance.exe"
+          Invoke-WebRequest -Uri "https://github.com/zenden2k/context-menu-launcher/releases/download/1.0/singleinstance.exe" `
+            -OutFile "build\dist\PianoTrans\singleinstance.exe"
 
       - name: Copy supporting files
         run: |
           $pkgDir = "build\dist\PianoTrans"
           New-Item -ItemType Directory -Force "$pkgDir\reg"
           Copy-Item README.md "$pkgDir\README.txt"
+          Copy-Item README_CN.md "$pkgDir\README_CN.txt"
           Copy-Item windows\PianoTrans-CPU.bat $pkgDir\
           Copy-Item windows\RightClickMenuRegister.bat $pkgDir\
           Copy-Item windows\RightClickMenuUnregister.bat $pkgDir\
           Copy-Item windows\RightClickMenuRegister.reg.in "$pkgDir\reg\"
           Copy-Item windows\RightClickMenuUnregister.reg "$pkgDir\reg\"
 
-      - name: Verify package structure and size
+      - name: Package as 7z
         run: |
-          Write-Host "=== Package contents ==="
-          Get-ChildItem build\dist\PianoTrans\ -Recurse -Depth 2 |
-            ForEach-Object { $_.FullName.Replace($pwd.Path + '\', '') }
-          Write-Host ""
-          $totalSize = (Get-ChildItem build\dist\PianoTrans\ -Recurse -File | Measure-Object -Property Length -Sum).Sum
-          $totalSizeMB = [math]::Round($totalSize / 1MB, 1)
-          $totalSizeGB = [math]::Round($totalSize / 1GB, 2)
-          Write-Host "=== Total package size: $totalSizeMB MB ($totalSizeGB GB) ==="
+          # Install 7-Zip via choco
+          choco install 7zip -y --no-progress
+          $7z = "C:\Program Files\7-Zip\7z.exe"
+          if (-not (Test-Path $7z)) {
+            $7z = (Get-Command 7z.exe -ErrorAction Stop).Source
+          }
+          $tag = "${{ inputs.tag || github.ref_name }}"
+          $archive = "PianoTrans-$tag.7z"
+          Write-Host "Creating $archive ..."
+          Push-Location build\dist
+          & $7z a -mx=9 "..\..\$archive" PianoTrans
+          Pop-Location
+          $size = (Get-Item $archive).Length
+          $sizeMB = [math]::Round($size / 1MB, 1)
+          Write-Host "Archive size: $sizeMB MB"
+          echo "archive=$archive" >> $env:GITHUB_ENV
 
-      - name: Upload artifact
-        if: ${{ inputs.upload_artifact != false }}
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: PianoTrans-Windows
-          path: build\dist\PianoTrans\
-          retention-days: 30
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: ${{ inputs.tag || github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: ${{ env.archive }}
