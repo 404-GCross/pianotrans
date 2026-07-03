@@ -106,11 +106,16 @@ jobs:
           Copy-Item windows\RightClickMenuRegister.reg.in "$pkgDir\reg\"
           Copy-Item windows\RightClickMenuUnregister.reg "$pkgDir\reg\"
 
-      - name: Verify package structure
+      - name: Verify package structure and size
         run: |
           Write-Host "=== Package contents ==="
           Get-ChildItem build\dist\PianoTrans\ -Recurse -Depth 2 |
             ForEach-Object { $_.FullName.Replace($pwd.Path + '\', '') }
+          Write-Host ""
+          $totalSize = (Get-ChildItem build\dist\PianoTrans\ -Recurse -File | Measure-Object -Property Length -Sum).Sum
+          $totalSizeMB = [math]::Round($totalSize / 1MB, 1)
+          $totalSizeGB = [math]::Round($totalSize / 1GB, 2)
+          Write-Host "=== Total package size: $totalSizeMB MB ($totalSizeGB GB) ==="
 
       - name: Upload artifact
         if: ${{ inputs.upload_artifact != false }}

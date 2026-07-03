@@ -2,9 +2,6 @@
 
 block_cipher = None
 
-from PyInstaller.utils.hooks import collect_data_files
-
-# Minimal: only collect librosa data files that are actually needed
 datas = []
 
 # Hidden imports — PyInstaller may miss these at analysis time
@@ -25,30 +22,18 @@ a = Analysis(['PianoTrans.py'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[
-                 # matplotlib — dependency of piano_transcription_inference
-                 # but never used at inference time
-                 'matplotlib',
-                 # Unnecessary torch subpackages
+                 # Unnecessary torch subpackages (saves ~200MB)
                  'torchvision',
                  'torchaudio',
                  'torch.distributed',
                  'torch.utils.tensorboard',
-                 # Test / dev tools
+                 # Test / dev tools (not needed at runtime)
                  'pytest',
                  'unittest',
-                 'setuptools',
                  'pip',
+                 'setuptools',
                  'wheel',
                  'pkg_resources',
-                 # Jupyter ecosystem (pulled by some packages but unused)
-                 'IPython',
-                 'jupyter',
-                 'jupyter_client',
-                 'jupyter_core',
-                 'notebook',
-                 'nbconvert',
-                 'nbformat',
-                 'ipykernel',
              ],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
