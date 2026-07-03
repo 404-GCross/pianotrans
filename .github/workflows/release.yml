@@ -114,6 +114,61 @@ jobs:
           Copy-Item windows\RightClickMenuRegister.reg.in "$pkgDir\reg\"
           Copy-Item windows\RightClickMenuUnregister.reg "$pkgDir\reg\"
 
+      - name: Size breakdown (before cleanup)
+        run: |
+          Write-Host "=== Size by top-level folders ==="
+          Get-ChildItem build\dist\PianoTrans\ -Directory | ForEach-Object {
+            $size = (Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+            $sizeMB = [math]::Round($size / 1MB, 1)
+            Write-Host "  $($_.Name): $sizeMB MB"
+          }
+          $total = (Get-ChildItem build\dist\PianoTrans -Recurse -File | Measure-Object -Property Length -Sum).Sum
+          Write-Host "  TOTAL: $([math]::Round($total / 1MB, 1)) MB"
+
+      - name: Remove unnecessary CUDA DLLs
+        run: |
+          $pkgDir = "build\dist\PianoTrans"
+          # These CUDA libraries are NOT needed for inference with this model:
+          #   curand     — random number generation (training only)
+          #   cusolverMg — multi-GPU linear algebra solver
+          #   cusparse   — sparse matrix operations (not used by CRNN model)
+          #   cusparseLt — sparse matrix operations (light variant)
+          #   nccl       — multi-GPU / distributed communication
+          #   nvJitLink  — CUDA JIT linker (only needed for Ahead-of-Time compilation)
+          #   nvrtc-builtins — NVRTC built-in headers (runtime compilation support)
+          #   nvToolsExt — NVIDIA profiling tools
+          $patterns = @(
+            '*curand*',
+            '*cusolverMg*',
+            '*cusparse*',
+            '*cusparseLt*',
+            '*nccl*',
+            '*nvJitLink*',
+            '*nvrtc-builtins*',
+            '*nvToolsExt*'
+          )
+          $removed = 0
+          foreach ($pattern in $patterns) {
+            $files = Get-ChildItem $pkgDir -Recurse -Filter $pattern -File -ErrorAction SilentlyContinue
+            foreach ($file in $files) {
+              $removed += $file.Length
+              Write-Host "Remove: $($file.Name) ($([math]::Round($file.Length / 1MB, 1)) MB)"
+              Remove-Item $file.FullName -Force
+            }
+          }
+          Write-Host "Freed: $([math]::Round($removed / 1MB, 1)) MB"
+
+      - name: Size breakdown (after cleanup)
+        run: |
+          Write-Host "=== Size after cleanup ==="
+          Get-ChildItem build\dist\PianoTrans\ -Directory | ForEach-Object {
+            $size = (Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+            $sizeMB = [math]::Round($size / 1MB, 1)
+            Write-Host "  $($_.Name): $sizeMB MB"
+          }
+          $total = (Get-ChildItem build\dist\PianoTrans -Recurse -File | Measure-Object -Property Length -Sum).Sum
+          Write-Host "  TOTAL: $([math]::Round($total / 1MB, 1)) MB ($([math]::Round($total / 1GB, 2)) GB)"
+
       - name: Package as 7z
         run: |
           choco install 7zip -y --no-progress
