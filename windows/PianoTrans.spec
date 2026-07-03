@@ -2,30 +2,15 @@
 
 block_cipher = None
 
-from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_data_files
 
-# Collect librosa data files (audio examples, etc.)
-datas = collect_data_files('librosa')
-
-# Collect torch CUDA DLLs — critical for GPU support
-torch_datas = collect_data_files('torch')
-for (src, dst) in torch_datas:
-    # Only include shared libraries — reduce bundle size
-    if src.endswith(('.dll', '.pyd')):
-        datas.append((src, dst))
+# Minimal: only collect librosa data files that are actually needed
+datas = []
 
 # Hidden imports — PyInstaller may miss these at analysis time
-# NOTE: Some sklearn internal modules are imported dynamically and
-# PyInstaller can't trace them. Add only the ones that actually exist
-# in your installed sklearn version.
 hiddenimports = [
-    # sklearn internals (used by librosa via numba)
     'sklearn.neighbors._partition_nodes',
     'sklearn.utils._weight_vector',
-    # torch C++ extensions
-    'torch',
-    'torch._C',
-    # misc
     'numba',
     'resampy',
     'soundfile',
@@ -40,9 +25,30 @@ a = Analysis(['PianoTrans.py'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[
-                 # Exclude unnecessary torch components to reduce size
+                 # matplotlib — dependency of piano_transcription_inference
+                 # but never used at inference time
+                 'matplotlib',
+                 # Unnecessary torch subpackages
                  'torchvision',
                  'torchaudio',
+                 'torch.distributed',
+                 'torch.utils.tensorboard',
+                 # Test / dev tools
+                 'pytest',
+                 'unittest',
+                 'setuptools',
+                 'pip',
+                 'wheel',
+                 'pkg_resources',
+                 # Jupyter ecosystem (pulled by some packages but unused)
+                 'IPython',
+                 'jupyter',
+                 'jupyter_client',
+                 'jupyter_core',
+                 'notebook',
+                 'nbconvert',
+                 'nbformat',
+                 'ipykernel',
              ],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
