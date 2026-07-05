@@ -75,7 +75,17 @@ class Gui:
         self.root.config(menu=Menu(self.root))
 
         self.textbox = scrolledtext.ScrolledText(self.root)
-        sys.stdout.write = sys.stderr.write = self.output
+
+        class _GuiWriter:
+            def __init__(self, textbox):
+                self.textbox = textbox
+            def write(self, s):
+                self.textbox.insert('end', s)
+                self.textbox.see('end')
+            def flush(self):
+                pass
+
+        sys.stdout = sys.stderr = _GuiWriter(self.textbox)
 
         button = Button(self.root, text="Add files to queue", command=self.open)
 
@@ -94,10 +104,6 @@ class Gui:
                 title='Audio/video files, hold {} for multiple selection'.format(self.ctrl))
         files = self.root.tk.splitlist(files)
         self.transcribe.enqueue(files)
-
-    def output(self, str):
-        self.textbox.insert('end', str)
-        self.textbox.see('end')
 
 def main():
     import argparse
