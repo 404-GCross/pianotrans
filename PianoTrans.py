@@ -77,15 +77,19 @@ class Gui:
         self.textbox = scrolledtext.ScrolledText(self.root)
 
         class _GuiWriter:
-            def __init__(self, textbox):
+            def __init__(self, root, textbox):
+                self.root = root
                 self.textbox = textbox
             def write(self, s):
+                # Schedule GUI update on main thread — tkinter is NOT thread-safe
+                self.root.after(0, lambda: self._write(s))
+            def _write(self, s):
                 self.textbox.insert('end', s)
                 self.textbox.see('end')
             def flush(self):
                 pass
 
-        sys.stdout = sys.stderr = _GuiWriter(self.textbox)
+        sys.stdout = sys.stderr = _GuiWriter(self.root, self.textbox)
 
         button = Button(self.root, text="Add files to queue", command=self.open)
 

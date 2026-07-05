@@ -22,10 +22,11 @@ a = Analysis(['PianoTrans.py'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[
-                 # Unnecessary torch subpackages (saves ~200MB)
+                 # torch subpackages not needed for inference
+                 # NOTE: do NOT exclude torch.distributed — it is imported
+                 #       by torch.utils.data.dataloader even in single-GPU mode
                  'torchvision',
                  'torchaudio',
-                 'torch.distributed',
                  'torch.utils.tensorboard',
                  # Test / dev tools (not needed at runtime)
                  'pytest',
