@@ -22,19 +22,12 @@ a = Analysis(['PianoTrans.py'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[
-                 # torch subpackages not needed for inference
-                 # NOTE: do NOT exclude torch.distributed — it is imported
-                 #       by torch.utils.data.dataloader even in single-GPU mode
+                 # Only exclude subpackages that are definitely safe:
+                 # torchvision/torchaudio are separate packages, not used
+                 # tensorboard is for logging, not needed at inference
                  'torchvision',
                  'torchaudio',
                  'torch.utils.tensorboard',
-                 # Test / dev tools (not needed at runtime)
-                 'pytest',
-                 'unittest',
-                 'pip',
-                 'setuptools',
-                 'wheel',
-                 'pkg_resources',
              ],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
