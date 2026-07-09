@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '鐗堟湰鍙?(渚嬪 1.1.1锛屼細鑷姩琛?v 鍓嶇紑)'
+        description: 'Version number (e.g. 1.1.1, auto-prepends v)'
         type: string
         required: true
         default: ''
@@ -195,4 +195,5 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: ${{ env.archive }}
+
 
