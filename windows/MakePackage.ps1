@@ -1,4 +1,4 @@
-function MakeDir {
+﻿function MakeDir {
     param($Dir)
     if (-not (Test-Path $Dir)) {
         mkdir -Path $Dir | Out-Null
@@ -60,35 +60,35 @@ function UnpackUrl {
     }
 }
 
-# ──── Configurable URLs (verify these before building) ────────────────────
+# 鈹€鈹€鈹€鈹€ Configurable URLs (verify these before building) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 $WinPythonUrl = "https://github.com/winpython/winpython/releases/download/13.1.202502222final/Winpython64-3.12.9.0dot.exe"
 $SevenZipUrl   = "https://www.7-zip.org/a/7z2602-x64.exe"
-$FFmpegUrl     = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-full.zip"
+$FFmpegUrl     = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
 $CheckpointUrl = "https://zenodo.org/record/4034264/files/CRNN_note_F1%3D0.9677_pedal_F1%3D0.9186.pth?download=1"
 $SingleExeUrl  = "https://github.com/zenden2k/context-menu-launcher/releases/download/1.0/singleinstance.exe"
 
-# PyTorch 2.7.1+cu128 — first stable release with Blackwell (RTX 50-series) support
+# PyTorch 2.7.1+cu128 鈥?first stable release with Blackwell (RTX 50-series) support
 $PyTorchIndex  = "https://download.pytorch.org/whl/cu128"
 $PyTorchVer    = "2.7.1"
 
-# librosa pinned to 0.9.x — compatible with piano_transcription_inference 0.0.5
-# without needing the Nix patches (which are only required for librosa ≥ 0.10)
+# librosa pinned to 0.9.x 鈥?compatible with piano_transcription_inference 0.0.5
+# without needing the Nix patches (which are only required for librosa 鈮?0.10)
 $LibrosaVer    = "0.9.2"
 
 $Version       = "v1.1"
 
-# ──── Setup directories ──────────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Setup directories 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 MakeDir build\
 MakeDir dist\downloads\
 
-# ──── 7-Zip 26.02 ────────────────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ 7-Zip 26.02 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 $7zDir = [IO.Path]::Combine($pwd, "build\7z")
 UnpackUrl -Url $SevenZipUrl -ArgumentList "/S /D=$7zDir" -TestPath $7zDir
 
-# ──── WinPython 3.12.9 (dot / minimal) ───────────────────────────────────
+# 鈹€鈹€鈹€鈹€ WinPython 3.12.9 (dot / minimal) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 # NOTE: If this URL fails, download the latest Winpython64-*-dot.exe from
 #       https://github.com/winpython/winpython/releases and place it in
 #       dist\downloads\, then update $WinPythonUrl.
@@ -131,7 +131,7 @@ MakeDir build\temp\
 $TempDir = Resolve-Path build\temp\ | select -ExpandProperty Path
 $env:TEMP = $TempDir
 
-# ──── Install PyTorch 2.7.1 + CUDA 12.8 ──────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Install PyTorch 2.7.1 + CUDA 12.8 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 if (-not (Test-Path $LibsDir\torch)) {
     Write-Host "Installing PyTorch $PyTorchVer + CUDA 12.8 (Blackwell support)..."
@@ -139,7 +139,7 @@ if (-not (Test-Path $LibsDir\torch)) {
         --index-url $PyTorchIndex
 }
 
-# ──── Install piano_transcription_inference + librosa ────────────────────
+# 鈹€鈹€鈹€鈹€ Install piano_transcription_inference + librosa 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 if (-not (Test-Path $LibsDir\piano_transcription_inference)) {
     Write-Host "Installing librosa==$LibrosaVer and piano_transcription_inference..."
@@ -148,18 +148,18 @@ if (-not (Test-Path $LibsDir\piano_transcription_inference)) {
         piano_transcription_inference
 }
 
-# ──── Install PyInstaller ────────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Install PyInstaller 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 if (-not (Test-Path $ScriptsDir\pyinstaller.exe)) {
     Write-Host "Installing PyInstaller..."
     & $PythonExe -m pip --cache-dir "$PipCacheDir" install pyinstaller
 }
 
-# ──── Freeze dependency list ─────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Freeze dependency list 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 & $PythonExe -m pip freeze | Out-File -encoding UTF8 pip.txt
 
-# ──── Build with PyInstaller ─────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Build with PyInstaller 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 if (-not (Test-Path build\dist\PianoTrans-$Version\)) {
     cp ..\PianoTrans.py, PianoTrans.spec build\
@@ -175,11 +175,11 @@ if (-not (Test-Path build\dist\PianoTrans-$Version\)) {
 }
 
 if (-not (Test-Path build\dist\PianoTrans-$Version\)) {
-    Write-Error "PyInstaller build failed — PianoTrans directory not found."
+    Write-Error "PyInstaller build failed 鈥?PianoTrans directory not found."
     exit 1
 }
 
-# ──── Download model checkpoint ──────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Download model checkpoint 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 MakeDir build\dist\PianoTrans-$Version\piano_transcription_inference_data\
 $CheckpointFile = 'note_F1=0.9677_pedal_F1=0.9186.pth'
@@ -193,7 +193,7 @@ if (-not (Test-Path $CheckpointDest)) {
     cp $CheckpointLocal $CheckpointDest
 }
 
-# ──── Bundle FFmpeg ──────────────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Bundle FFmpeg 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 $FFmpegZip = "ffmpeg-master-latest-win64-gpl-shared.zip"
 MakeDir build\dist\PianoTrans-$Version\ffmpeg\
@@ -201,7 +201,7 @@ if (-not (Test-Path build\dist\PianoTrans-$Version\ffmpeg\ffmpeg.exe)) {
     Write-Host "Downloading FFmpeg..."
     DownloadUrl -Url $FFmpegUrl -File $FFmpegZip
 
-    # FFmpeg zip extracts to a versioned directory — find it
+    # FFmpeg zip extracts to a versioned directory 鈥?find it
     $ffmpegExtractDir = [IO.Path]::Combine($pwd, "build\ffmpeg_extract")
     if (Test-Path $ffmpegExtractDir) { rm -r $ffmpegExtractDir }
     MakeDir $ffmpegExtractDir
@@ -217,24 +217,24 @@ if (-not (Test-Path build\dist\PianoTrans-$Version\ffmpeg\ffmpeg.exe)) {
     if ($ffmpegExe) {
         cp $ffmpegExe.FullName build\dist\PianoTrans-$Version\ffmpeg\
     } else {
-        Write-Warning "ffmpeg.exe not found in extracted zip — check FFmpeg archive structure"
+        Write-Warning "ffmpeg.exe not found in extracted zip 鈥?check FFmpeg archive structure"
     }
     rm -r $ffmpegExtractDir
 }
 
-# ──── Context menu launcher ──────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Context menu launcher 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 DownloadUrl -Url $SingleExeUrl -File dist\downloads\singleinstance.exe
 cp dist\downloads\singleinstance.exe build\dist\PianoTrans-$Version\
 
-# ──── Copy supporting files ──────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Copy supporting files 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 MakeDir build\dist\PianoTrans-$Version\reg\
 cp ..\README.md build\dist\PianoTrans-$Version\README.txt
 cp PianoTrans-CPU.bat, RightClickMenuRegister.bat, RightClickMenuUnregister.bat build\dist\PianoTrans-$Version\
 cp RightClickMenuRegister.reg.in, RightClickMenuUnregister.reg build\dist\PianoTrans-$Version\reg\
 
-# ──── Package as 7z ──────────────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Package as 7z 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 $SevenZipArchive = "dist\PianoTrans-$Version.7z"
 if (-not (Test-Path $SevenZipArchive)) {
@@ -243,9 +243,10 @@ if (-not (Test-Path $SevenZipArchive)) {
     Pop-Location
 }
 
-# ──── Done ───────────────────────────────────────────────────────────────
+# 鈹€鈹€鈹€鈹€ Done 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 Write-Host "============================================"
 Write-Host "Build complete: $SevenZipArchive"
 Write-Host "============================================"
 Read-Host "Done, press enter to exit"
+

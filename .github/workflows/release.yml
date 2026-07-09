@@ -1,10 +1,10 @@
-name: Release
+﻿name: Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (例如 1.1.1，会自动补 v 前缀)'
+        description: '鐗堟湰鍙?(渚嬪 1.1.1锛屼細鑷姩琛?v 鍓嶇紑)'
         type: string
         required: true
         default: ''
@@ -85,7 +85,7 @@ jobs:
         run: |
           $ffmpegDir = "build\dist\PianoTrans\ffmpeg"
           New-Item -ItemType Directory -Force $ffmpegDir
-          $zipUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-full.zip"
+          $zipUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
           Invoke-WebRequest -Uri $zipUrl -OutFile ffmpeg.zip
           Expand-Archive -Path ffmpeg.zip -DestinationPath ffmpeg_extract -Force
           $ffmpegExe = Get-ChildItem ffmpeg_extract -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
@@ -129,14 +129,14 @@ jobs:
         run: |
           $pkgDir = "build\dist\PianoTrans"
           # These CUDA libraries are NOT needed for inference with this model:
-          #   curand     — random number generation (training only)
-          #   cusolverMg — multi-GPU linear algebra solver
-          #   cusparse   — sparse matrix operations (not used by CRNN model)
-          #   cusparseLt — sparse matrix operations (light variant)
-          #   nccl       — multi-GPU / distributed communication
-          #   nvJitLink  — CUDA JIT linker (only needed for Ahead-of-Time compilation)
-          #   nvrtc-builtins — NVRTC built-in headers (runtime compilation support)
-          #   nvToolsExt — NVIDIA profiling tools
+          #   curand     鈥?random number generation (training only)
+          #   cusolverMg 鈥?multi-GPU linear algebra solver
+          #   cusparse   鈥?sparse matrix operations (not used by CRNN model)
+          #   cusparseLt 鈥?sparse matrix operations (light variant)
+          #   nccl       鈥?multi-GPU / distributed communication
+          #   nvJitLink  鈥?CUDA JIT linker (only needed for Ahead-of-Time compilation)
+          #   nvrtc-builtins 鈥?NVRTC built-in headers (runtime compilation support)
+          #   nvToolsExt 鈥?NVIDIA profiling tools
           $patterns = @(
             '*curand*',
             '*cusolverMg*',
@@ -195,3 +195,4 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: ${{ env.archive }}
+

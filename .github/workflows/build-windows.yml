@@ -1,4 +1,4 @@
-name: Build Windows Package
+﻿name: Build Windows Package
 
 on:
   workflow_dispatch:
@@ -73,7 +73,7 @@ jobs:
         run: |
           $ffmpegDir = "build\dist\PianoTrans\ffmpeg"
           New-Item -ItemType Directory -Force $ffmpegDir
-          $zipUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-full.zip"
+          $zipUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
           $zipFile = "ffmpeg.zip"
           Write-Host "Downloading FFmpeg..."
           Invoke-WebRequest -Uri $zipUrl -OutFile $zipFile
@@ -144,3 +144,4 @@ jobs:
           name: PianoTrans-Windows
           path: build\dist\PianoTrans\
           retention-days: 30
+
