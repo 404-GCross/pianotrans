@@ -68,7 +68,7 @@ class Gui:
         from tkinter import Button, Menu, Tk, scrolledtext
 
         self.transcribe = transcribe
-        self.ctrl = '鈱? if system() == 'Darwin' else 'CTRL'
+        self.ctrl = '\u2318' if system() == 'Darwin' else 'CTRL'
 
         self.root = Tk()
         self.root.title('PianoTrans')
@@ -152,5 +152,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
