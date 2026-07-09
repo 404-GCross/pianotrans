@@ -64,7 +64,7 @@ function UnpackUrl {
 
 $WinPythonUrl = "https://github.com/winpython/winpython/releases/download/13.1.202502222final/Winpython64-3.12.9.0dot.exe"
 $SevenZipUrl   = "https://www.7-zip.org/a/7z2602-x64.exe"
-$FFmpegUrl     = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
+$FFmpegUrl     = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-full.zip"
 $CheckpointUrl = "https://zenodo.org/record/4034264/files/CRNN_note_F1%3D0.9677_pedal_F1%3D0.9186.pth?download=1"
 $SingleExeUrl  = "https://github.com/zenden2k/context-menu-launcher/releases/download/1.0/singleinstance.exe"
 
