@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 
 import os
 import sys
@@ -68,7 +68,7 @@ class Gui:
         from tkinter import Button, Menu, Tk, scrolledtext
 
         self.transcribe = transcribe
-        self.ctrl = '⌘' if system() == 'Darwin' else 'CTRL'
+        self.ctrl = '鈱? if system() == 'Darwin' else 'CTRL'
 
         self.root = Tk()
         self.root.title('PianoTrans')
@@ -81,7 +81,7 @@ class Gui:
                 self.root = root
                 self.textbox = textbox
             def write(self, s):
-                # Schedule GUI update on main thread — tkinter is NOT thread-safe
+                # Schedule GUI update on main thread 鈥?tkinter is NOT thread-safe
                 self.root.after(0, lambda: self._write(s))
             def _write(self, s):
                 self.textbox.insert('end', s)
@@ -123,6 +123,18 @@ def main():
         script_dir = os.path.dirname(sys.argv[0])
         os.environ['PATH'] += os.pathsep + os.path.abspath(os.path.join(script_dir, 'ffmpeg'))
         checkpoint = os.path.abspath(os.path.join(script_dir, 'piano_transcription_inference_data', 'note_F1=0.9677_pedal_F1=0.9186.pth'))
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        for _d in [os.path.join(script_dir, 'ffmpeg'),
+                   os.path.join(script_dir, '..', 'ffmpeg'),
+                   os.path.abspath(os.path.join(script_dir, '..', '..', 'Downloads', 'PianoTrans', 'ffmpeg'))]:
+            _fp = os.path.join(_d, 'ffmpeg.exe')
+            if os.path.isfile(_fp):
+                os.environ['PATH'] = _d + os.pathsep + os.environ.get('PATH', '')
+                break
+        _cp = os.path.abspath(os.path.join(script_dir, 'piano_transcription_inference_data', 'note_F1=0.9677_pedal_F1=0.9186.pth'))
+        if os.path.isfile(_cp):
+            checkpoint = _cp
 
     transcribe = Transcribe(checkpoint=checkpoint)
     files = args.file
@@ -140,3 +152,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
