@@ -62,6 +62,9 @@
             devshell = import inputs.devshell { nixpkgs = pkgs; };
             pkgs = mkPkgs { };
             pkgs-bin = mkPkgs {
+              # torch-bin on Linux also reference cudaPackages, enable
+              # cudaSupport to get cache hit on cache.nixos-cuda.org
+              config.cudaSupport = pkgs.stdenv.hostPlatform.isLinux;
               overlays = [
                 (final: prev: {
                   python3Packages = prev.python3Packages.overrideScope (
