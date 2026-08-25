@@ -31,29 +31,38 @@
       eachSystem =
         f:
         inputs.nixpkgs.lib.genAttrs systems (
-          let
-            overlays = [
-              (final: prev: {
-                pianotrans = final.callPackage ./nix/pianotrans { };
-                python3Packages = prev.python3Packages.overrideScope (
-                  pyfinal: pyprev: {
-                    piano-transcription-inference = pyfinal.callPackage ./nix/piano-transcription-inference { };
-                  }
-                );
-              })
-            ];
-          in
           system:
+          let
+            mkPkgs =
+              {
+                config ? { },
+                overlays ? [ ],
+              }:
+              import inputs.nixpkgs {
+                inherit system;
+                config = {
+                  allowUnfree = true;
+                }
+                // config;
+                overlays = [
+                  (final: prev: {
+                    pianotrans = final.callPackage ./nix/pianotrans { };
+                    python3Packages = prev.python3Packages.overrideScope (
+                      pyfinal: pyprev: {
+                        piano-transcription-inference = pyfinal.callPackage ./nix/piano-transcription-inference { };
+                      }
+                    );
+                  })
+                ]
+                ++ overlays;
+              };
+          in
           f rec {
             inherit system;
             devshell = import inputs.devshell { nixpkgs = pkgs; };
-            pkgs = import inputs.nixpkgs {
-              inherit system overlays;
-            };
-            pkgs-bin = import inputs.nixpkgs {
-              inherit system;
-              config.allowUnfree = true;
-              overlays = overlays ++ [
+            pkgs = mkPkgs { };
+            pkgs-bin = mkPkgs {
+              overlays = [
                 (final: prev: {
                   python3Packages = prev.python3Packages.overrideScope (
                     pyfinal: pyprev: {
@@ -63,19 +72,11 @@
                 })
               ];
             };
-            pkgs-cuda = import inputs.nixpkgs {
-              inherit system overlays;
-              config = {
-                allowUnfree = true;
-                cudaSupport = true;
-              };
+            pkgs-cuda = mkPkgs {
+              config.cudaSupport = true;
             };
-            pkgs-rocm = import inputs.nixpkgs {
-              inherit system overlays;
-              config = {
-                allowUnfree = true;
-                rocmSupport = true;
-              };
+            pkgs-rocm = mkPkgs {
+              config.rocmSupport = true;
             };
           }
         );
