@@ -1,41 +1,34 @@
-{ stdenv
-, lib
-, buildPythonPackage
-, fetchPypi
-, fetchpatch
-, fetchurl
-, librosa
-, matplotlib
-, mido
-, torch
-, torchlibrosa
+{
+  lib,
+  buildPythonPackage,
+  fetchPypi,
+  fetchpatch,
+  fetchurl,
+
+  # build-system
+  setuptools,
+
+  # dependencies
+  audioread,
+  librosa,
+  matplotlib,
+  mido,
+  torch,
+  torchlibrosa,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "piano-transcription-inference";
-  version = "0.0.5";
-  format = "setuptools";
+  version = "0.0.6";
+  pyproject = true;
+  __structuredAttrs = true;
 
+  # No tags on GitHub
   src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-nbhuSkXuWrekFxwdNHaspuag+3K1cKwq90IpATBpWPY=";
+    pname = "piano_transcription_inference";
+    inherit (finalAttrs) version;
+    hash = "sha256-tt0A+bS8rLYUByXwO0E5peD0rNNaaeSSpdH3NOz70jE=";
   };
-
-  checkpoint = fetchurl {
-    name = "piano-transcription-inference.pth";
-    # The download url can be found in
-    # https://github.com/qiuqiangkong/piano_transcription_inference/blob/master/piano_transcription_inference/inference.py
-    url = "https://zenodo.org/record/4034264/files/CRNN_note_F1%3D0.9677_pedal_F1%3D0.9186.pth?download=1";
-    hash = "sha256-w/qXMHJb9Kdi8cFLyAzVmG6s2gGwJvWkolJc1geHYUE=";
-  };
-
-  propagatedBuildInputs = [
-    librosa
-    matplotlib
-    mido
-    torch
-    torchlibrosa
-  ];
 
   patches = [
     # Fix run against librosa 0.10.0
@@ -56,24 +49,44 @@ buildPythonPackage rec {
       "checkpoint_path='$out/share/checkpoint.pth'"
   '';
 
+  checkpoint = fetchurl {
+    name = "piano-transcription-inference.pth";
+    # The download url can be found in
+    # https://github.com/qiuqiangkong/piano_transcription_inference/blob/master/piano_transcription_inference/inference.py
+    url = "https://zenodo.org/record/4034264/files/CRNN_note_F1%3D0.9677_pedal_F1%3D0.9186.pth?download=1";
+    hash = "sha256-w/qXMHJb9Kdi8cFLyAzVmG6s2gGwJvWkolJc1geHYUE=";
+  };
+
+  build-system = [ setuptools ];
+
+  dependencies = [
+    # Undeclared upstream, was previously pulled in by librosa (dropped in 1.0.0)
+    audioread
+    librosa
+    matplotlib
+    mido
+    torch
+    torchlibrosa
+  ];
+
   postInstall = ''
     mkdir "$out/share"
-    ln -s "${checkpoint}" "$out/share/checkpoint.pth"
+    ln -s "${finalAttrs.checkpoint}" "$out/share/checkpoint.pth"
   '';
 
   # Project has no tests.
   # In order to make pythonImportsCheck work, NUMBA_CACHE_DIR env var need to
   # be set to a writable dir (https://github.com/numba/numba/issues/4032#issuecomment-488102702).
-  # pythonImportsCheck has no pre* hook, use checkPhase to wordaround that.
+  # pythonImportsCheck has no pre* hook, use checkPhase to workaround that.
   checkPhase = ''
     export NUMBA_CACHE_DIR="$(mktemp -d)"
   '';
   pythonImportsCheck = [ "piano_transcription_inference" ];
 
-  meta = with lib; {
-    description = "A piano transcription inference package";
+  meta = {
+    description = "Piano transcription inference package";
     homepage = "https://github.com/qiuqiangkong/piano_transcription_inference";
-    license = licenses.mit;
-    maintainers = with maintainers; [ azuwis ];
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ azuwis ];
   };
-}
+})
