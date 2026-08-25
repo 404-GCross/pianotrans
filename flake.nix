@@ -121,36 +121,47 @@
           ...
         }:
         let
-          mkShellPkgs = pkgs: [
-            (pkgs.python.withPackages (ps: [
-              ps.piano-transcription-inference
-              ps.resampy
-              ps.tkinter
-            ]))
-            pkgs.ffmpeg
-          ];
-          shell = devshell.mkShell { packages = mkShellPkgs pkgs; };
-          wrapBlas =
-            blas:
-            devshell.mkShell {
-              packages = mkShellPkgs pkgs;
-              env = [
-                {
-                  name = "LD_PRELOAD";
-                  value = "${blas}/lib/libblas.so";
-                }
-              ];
-            };
+          mkShell =
+            {
+              pkgs ? pkgs,
+              blas ? null,
+            }:
+            devshell.mkShell (
+              {
+                packages = [
+                  (pkgs.python.withPackages (ps: [
+                    ps.piano-transcription-inference
+                    ps.resampy
+                    ps.tkinter
+                  ]))
+                  pkgs.ffmpeg
+                ];
+              }
+              // (
+                if blas != null then
+                  {
+                    env = [
+                      {
+                        name = "LD_PRELOAD";
+                        value = "${blas}/lib/libblas.so";
+                      }
+                    ];
+                  }
+                else
+                  { }
+              )
+            );
+          shell = mkShell { };
         in
         {
           inherit shell;
           default = shell;
-          shell-amd-blis = wrapBlas pkgs.amd-blis;
-          shell-bin = devshell.mkShell { packages = mkShellPkgs pkgs-bin; };
-          shell-blis = wrapBlas pkgs.blis;
-          shell-cuda = devshell.mkShell { packages = mkShellPkgs pkgs-cuda; };
-          shell-mkl = wrapBlas pkgs.mkl;
-          shell-rocm = devshell.mkShell { packages = mkShellPkgs pkgs-rocm; };
+          shell-amd-blis = mkShell { blas = pkgs.amd-blis; };
+          shell-bin = mkShell { pkgs = pkgs-bin; };
+          shell-blis = mkShell { blas = pkgs.blis; };
+          shell-cuda = mkShell { pkgs = pkgs-cuda; };
+          shell-mkl = mkShell { blas = pkgs.mkl; };
+          shell-rocm = mkShell { pkgs = pkgs-rocm; };
         }
       );
     };
