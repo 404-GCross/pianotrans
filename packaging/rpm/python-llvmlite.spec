@@ -37,11 +37,6 @@ Requires:       llvm-libs%{?_isa} < 23
 
 %prep
 %autosetup -n %{pypi_name}-%{version}
-cat > pyproject.toml <<'EOF'
-[build-system]
-requires = ["setuptools", "versioneer", "wheel"]
-build-backend = "setuptools.build_meta"
-EOF
 
 %generate_buildrequires
 %if %{with tests}
