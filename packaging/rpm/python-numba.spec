@@ -20,7 +20,7 @@ BuildRequires:  python3dist(numpy) < 2.6
 BuildRequires:  python3dist(packaging)
 BuildRequires:  python3dist(setuptools)
 BuildRequires:  python3dist(wheel)
-BuildRequires:  python3dist(llvmlite) >= 0.49.0
+BuildRequires:  python3dist(llvmlite) >= 0.49
 BuildRequires:  python3dist(llvmlite) < 0.50
 
 %global _description %{expand:
@@ -31,7 +31,7 @@ numeric functions.}
 
 %package -n python3-%{pypi_name}
 Summary:        %{summary}
-Requires:       python3dist(llvmlite) >= 0.49.0
+Requires:       python3dist(llvmlite) >= 0.49
 Requires:       python3dist(llvmlite) < 0.50
 Requires:       python3dist(numpy) >= 1.22
 Requires:       python3dist(numpy) < 2.6
