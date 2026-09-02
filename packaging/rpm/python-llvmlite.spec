@@ -19,6 +19,7 @@ BuildRequires:  pyproject-rpm-macros
 BuildRequires:  python3-devel
 BuildRequires:  python3dist(packaging)
 BuildRequires:  python3dist(setuptools)
+BuildRequires:  python3dist(versioneer)
 BuildRequires:  python3dist(wheel)
 
 %global _description %{expand:
@@ -38,7 +39,7 @@ Requires:       llvm-libs%{?_isa} < 23
 %autosetup -n %{pypi_name}-%{version}
 cat > pyproject.toml <<'EOF'
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "versioneer", "wheel"]
 build-backend = "setuptools.build_meta"
 EOF
 
