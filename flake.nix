@@ -32,32 +32,55 @@
         f:
         inputs.nixpkgs.lib.genAttrs systems (
           system:
+          let
+            mkPkgs =
+              {
+                config ? { },
+                overlays ? [ ],
+              }:
+              import inputs.nixpkgs {
+                inherit system;
+                config = {
+                  allowUnfree = true;
+                }
+                // config;
+                overlays = [
+                  (final: prev: {
+                    pianotrans = final.callPackage ./nix/pianotrans { };
+                    python3Packages = prev.python3Packages.overrideScope (
+                      pyfinal: pyprev: {
+                        piano-transcription-inference = pyfinal.callPackage ./nix/piano-transcription-inference { };
+                      }
+                    );
+                  })
+                ]
+                ++ overlays;
+              };
+          in
           f rec {
             inherit system;
             devshell = import inputs.devshell { nixpkgs = pkgs; };
-            pkgs = import inputs.nixpkgs {
-              inherit system;
-              config.allowUnfree = true;
+            pkgs = mkPkgs { };
+            pkgs-bin = mkPkgs {
+              # torch-bin on Linux also reference cudaPackages, enable
+              # cudaSupport to get cache hit on cache.nixos-cuda.org
+              config.cudaSupport = pkgs.stdenv.hostPlatform.isLinux;
+              overlays = [
+                (final: prev: {
+                  python3Packages = prev.python3Packages.overrideScope (
+                    pyfinal: pyprev: {
+                      torch = pyfinal.torch-bin;
+                    }
+                  );
+                })
+              ];
             };
-            python3-bin = pkgs.python3.override {
-              packageOverrides = self: super: { torch = super.torch-bin; };
+            pkgs-cuda = mkPkgs {
+              config.cudaSupport = true;
             };
-            python3-cuda =
-              (import inputs.nixpkgs {
-                inherit system;
-                config = {
-                  allowUnfree = true;
-                  cudaSupport = true;
-                };
-              }).python3;
-            python3-rocm =
-              (import inputs.nixpkgs {
-                inherit system;
-                config = {
-                  allowUnfree = true;
-                  rocmSupport = true;
-                };
-              }).python3;
+            pkgs-rocm = mkPkgs {
+              config.rocmSupport = true;
+            };
           }
         );
     in
@@ -65,13 +88,12 @@
       packages = eachSystem (
         {
           pkgs,
-          python3-bin,
-          python3-cuda,
-          python3-rocm,
+          pkgs-bin,
+          pkgs-cuda,
+          pkgs-rocm,
           ...
         }:
         let
-          # pianotrans = pkgs.callPackage ./nix/pianotrans { };
           pianotrans = pkgs.pianotrans;
           wrapBlas =
             blas:
@@ -83,55 +105,66 @@
         {
           inherit pianotrans;
           default = pianotrans;
-          pianotrans-bin = pianotrans.override { python3 = python3-bin; };
+          pianotrans-bin = pkgs-bin.pianotrans;
           pianotrans-blis = wrapBlas pkgs.blis;
           pianotrans-amd-blis = wrapBlas pkgs.amd-blis;
-          pianotrans-cuda = pianotrans.override { python3 = python3-cuda; };
+          pianotrans-cuda = pkgs-cuda.pianotrans;
           pianotrans-mkl = wrapBlas pkgs.mkl;
-          pianotrans-rocm = pianotrans.override { python3 = python3-rocm; };
+          pianotrans-rocm = pkgs-rocm.pianotrans;
         }
       );
 
       devShells = eachSystem (
         {
-          pkgs,
           devshell,
-          python3-bin,
-          python3-cuda,
-          python3-rocm,
+          pkgs,
+          pkgs-bin,
+          pkgs-cuda,
+          pkgs-rocm,
           ...
         }:
         let
-          mkShellPkgs = python: [
-            (python.withPackages (ps: [
-              ps.piano-transcription-inference
-              ps.resampy
-              ps.tkinter
-            ]))
-            pkgs.ffmpeg
-          ];
-          shell = devshell.mkShell { packages = mkShellPkgs pkgs.python3; };
-          wrapBlas =
-            blas:
-            devshell.mkShell {
-              packages = mkShellPkgs pkgs.python3;
-              env = [
-                {
-                  name = "LD_PRELOAD";
-                  value = "${blas}/lib/libblas.so";
-                }
-              ];
-            };
+          mkShell =
+            {
+              pkgs ? pkgs,
+              blas ? null,
+            }:
+            devshell.mkShell (
+              {
+                packages = [
+                  (pkgs.python.withPackages (ps: [
+                    ps.piano-transcription-inference
+                    ps.resampy
+                    ps.tkinter
+                  ]))
+                  pkgs.ffmpeg
+                ];
+              }
+              // (
+                if blas != null then
+                  {
+                    env = [
+                      {
+                        name = "LD_PRELOAD";
+                        value = "${blas}/lib/libblas.so";
+                      }
+                    ];
+                  }
+                else
+                  { }
+              )
+            );
+          shell = mkShell { };
         in
         {
           inherit shell;
           default = shell;
-          shell-amd-blis = wrapBlas pkgs.amd-blis;
-          shell-bin = devshell.mkShell { packages = mkShellPkgs python3-bin; };
-          shell-blis = wrapBlas pkgs.blis;
-          shell-cuda = devshell.mkShell { packages = mkShellPkgs python3-cuda; };
-          shell-mkl = wrapBlas pkgs.mkl;
-          shell-rocm = devshell.mkShell { packages = mkShellPkgs python3-rocm; };
+          shell-amd-blis = mkShell { blas = pkgs.amd-blis; };
+          shell-bin = mkShell { pkgs = pkgs-bin; };
+          shell-blis = mkShell { blas = pkgs.blis; };
+          shell-cuda = mkShell { pkgs = pkgs-cuda; };
+          shell-mkl = mkShell { blas = pkgs.mkl; };
+          shell-rocm = mkShell { pkgs = pkgs-rocm; };
         }
       );
     };

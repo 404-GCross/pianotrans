@@ -1,13 +1,14 @@
 {
   lib,
-  python3,
+  python3Packages,
   ffmpeg,
 }:
 
-python3.pkgs.buildPythonApplication {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "pianotrans";
   version = "1.0.1";
-  format = "setuptools";
+  pyproject = true;
+  __structuredAttrs = true;
 
   src =
     with lib.fileset;
@@ -19,7 +20,9 @@ python3.pkgs.buildPythonApplication {
       ];
     };
 
-  propagatedBuildInputs = with python3.pkgs; [
+  build-system = with python3Packages; [ setuptools ];
+
+  dependencies = with python3Packages; [
     piano-transcription-inference
     resampy
     tkinter
@@ -29,12 +32,18 @@ python3.pkgs.buildPythonApplication {
   # Project has no tests
   doCheck = false;
 
-  makeWrapperArgs = [ ''--prefix PATH : "${lib.makeBinPath [ ffmpeg ]}"'' ];
+  makeWrapperArgs = [
+    "--prefix"
+    "PATH"
+    ":"
+    (lib.makeBinPath [ ffmpeg ])
+  ];
 
-  meta = with lib; {
+  meta = {
     description = "Simple GUI for ByteDance's Piano Transcription with Pedals";
+    mainProgram = "pianotrans";
     homepage = "https://github.com/azuwis/pianotrans";
-    license = licenses.mit;
-    maintainers = with maintainers; [ azuwis ];
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ azuwis ];
   };
-}
+})
