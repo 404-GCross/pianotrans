@@ -1,4 +1,5 @@
 %global pypi_name soxr
+%global _debugsource_packages 0
 
 Name:           python-%{pypi_name}
 Version:        1.1.0
