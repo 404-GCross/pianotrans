@@ -19,7 +19,7 @@ BuildRequires:  python3dist(nanobind) >= 2
 BuildRequires:  python3dist(numpy)
 BuildRequires:  python3dist(scikit-build-core) >= 0.11
 BuildRequires:  python3dist(setuptools)
-BuildRequires:  python3dist(setuptools-scm)
+BuildRequires:  python3dist(setuptools-scm[toml]) >= 6.2
 BuildRequires:  soxr-devel
 
 %global _description %{expand:
