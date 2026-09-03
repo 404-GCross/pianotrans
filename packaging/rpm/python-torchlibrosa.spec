@@ -34,7 +34,7 @@ Requires:       python3dist(torch)
 %if %{with tests}
 %pyproject_buildrequires -r
 %else
-%pyproject_buildrequires
+%pyproject_buildrequires -R
 %endif
 
 %build
@@ -54,5 +54,5 @@ Requires:       python3dist(torch)
 %doc README.md
 
 %changelog
-* Wed Sep 02 2026 Codex <codex@localhost> - 0.1.0-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 0.1.0-1
 - Initial Fedora-style package for PianoTrans dependency closure.

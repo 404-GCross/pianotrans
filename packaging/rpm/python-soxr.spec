@@ -42,7 +42,7 @@ Requires:       python3dist(numpy)
 %if %{with tests}
 %pyproject_buildrequires -r -C cmake.define.USE_SYSTEM_LIBSOXR=ON
 %else
-%pyproject_buildrequires -C cmake.define.USE_SYSTEM_LIBSOXR=ON
+%pyproject_buildrequires -R -C cmake.define.USE_SYSTEM_LIBSOXR=ON
 %endif
 
 %build
@@ -62,5 +62,5 @@ Requires:       python3dist(numpy)
 %doc README.md
 
 %changelog
-* Wed Sep 02 2026 Codex <codex@localhost> - 1.1.0-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 1.1.0-1
 - Initial Fedora-style package using system libsoxr.

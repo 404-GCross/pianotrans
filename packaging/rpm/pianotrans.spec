@@ -44,8 +44,8 @@ chmod 0755 %{buildroot}%{_bindir}/pianotrans
 %pycached %{python3_sitelib}/PianoTrans.py
 
 %changelog
-* Wed Sep 02 2026 Codex <codex@localhost> - 1.1-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 1.1-1
 - Package the v1.1 GitHub release tag.
 
-* Wed Sep 02 2026 Codex <codex@localhost> - 1.0.1-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 1.0.1-1
 - Initial RPM packaging for PianoTrans.

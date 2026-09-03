@@ -42,7 +42,7 @@ Requires:       llvm-libs%{?_isa} < 23
 %if %{with tests}
 %pyproject_buildrequires -r
 %else
-%pyproject_buildrequires
+%pyproject_buildrequires -R
 %endif
 
 %build
@@ -67,5 +67,5 @@ PYTHONPATH=%{buildroot}%{python3_sitearch} \
 %doc README.rst
 
 %changelog
-* Wed Sep 02 2026 Codex <codex@localhost> - 0.49.0-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 0.49.0-1
 - Initial Fedora-style package for PianoTrans dependency closure.

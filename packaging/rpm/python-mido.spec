@@ -32,7 +32,7 @@ Summary:        %{summary}
 %if %{with tests}
 %pyproject_buildrequires -r
 %else
-%pyproject_buildrequires
+%pyproject_buildrequires -R
 %endif
 
 %build
@@ -56,5 +56,5 @@ Summary:        %{summary}
 %{_bindir}/mido-serve
 
 %changelog
-* Wed Sep 02 2026 Codex <codex@localhost> - 1.3.3-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 1.3.3-1
 - Initial Fedora-style package for PianoTrans dependency closure.

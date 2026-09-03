@@ -63,7 +63,7 @@ inference without runtime network downloads.
 %if %{with tests}
 %pyproject_buildrequires -r
 %else
-%pyproject_buildrequires
+%pyproject_buildrequires -R
 %endif
 
 %build
@@ -89,5 +89,5 @@ install -Dpm 0644 %{SOURCE1} \
 %{_datadir}/%{dist_name}/%{checkpoint_name}
 
 %changelog
-* Wed Sep 02 2026 Codex <codex@localhost> - 0.0.6-1
+* Wed Sep 02 2026 GCross <176783842+404-GCross@users.noreply.github.com> - 0.0.6-1
 - Initial Fedora-style package with packaged checkpoint data.
