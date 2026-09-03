@@ -52,8 +52,12 @@ RPM builds can run in GitHub Actions with `.github/workflows/build-rpm.yml`.
 
 Use **Actions -> Build RPM -> Run workflow** to build in a Fedora 44 container.
 Tag pushes matching `v*` also trigger the workflow. Successful runs upload a
-`pianotrans-rpms-fedora-44-x86_64` artifact containing binary RPMs, SRPMs, and
-repository metadata.
+`pianotrans-rpms-fedora-44-x86_64` artifact containing
+`pianotrans-fedora-44-rpm-repo.tar.zst` and `SHA256SUMS`. Successful pushes to
+`master` also refresh the `rpm-pre-release` GitHub pre-release with those two
+files.
+
+The archive contains binary RPMs, SRPMs, and repository metadata.
 
 The workflow installs build dependencies, downloads source archives and the
 checkpoint, builds packages in dependency order, registers each local RPM layer
